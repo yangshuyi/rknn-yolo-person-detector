@@ -1,4 +1,5 @@
 import sys
+import os
 import cv2
 import numpy as np
 from rknnlite.api import RKNNLite
@@ -85,7 +86,10 @@ def draw(img, detections):
 
 def main():
     img_path = sys.argv[1] if len(sys.argv) > 1 else 'image.jpg'
-    out_path = sys.argv[2] if len(sys.argv) > 2 else 'result.jpg'
+    filename = os.path.basename(img_path)
+    out_dir = sys.argv[2] if len(sys.argv) > 2 else 'result'
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, filename)
 
     img = cv2.imread(img_path)
     if img is None:
