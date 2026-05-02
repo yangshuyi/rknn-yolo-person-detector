@@ -1,0 +1,27 @@
+services:
+  yolo-detector:
+    build: .
+    network_mode: host
+    privileged: true   # rknnlite 需要访问 NPU 设备及 /proc/device-tree（mount bind 注入）
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./yolo11n.rknn:/app/models/yolo11n.rknn:ro
+      # rknnlite Python 包（平台专用，从宿主机挂载）
+      - /home/orangepi/.local/lib/python3.10/site-packages/rknnlite:/usr/local/lib/python3.10/dist-packages/rknnlite:ro
+      # RKNN 推理运行时库
+      - /usr/lib/librknnrt.so:/usr/lib/librknnrt.so:ro
+      # RK3588 平台标识文件（/proc 无法直接映射，由 entrypoint 通过 mount bind 注入）
+      - ./rknn_compatible:/rknn/compatible:ro
+      # 结果目录
+      - ./result:/app/result
+    devices:
+      - /dev/mali0:/dev/mali0
+      - /dev/mpp_service:/dev/mpp_service
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/renderD129:/dev/dri/renderD129
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

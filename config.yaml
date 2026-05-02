@@ -1,0 +1,23 @@
+model:
+  path: /app/models/yolo11n.rknn
+  input_size: 640
+  conf_thresh: 0.25
+  nms_thresh: 0.45
+  target_classes:
+    - person
+
+processing:
+  process_fps: 10
+  max_delay_ms: 1000
+
+output:
+  mjpeg_port: 8090
+  jpeg_quality: 85
+
+streams:
+  - name: bedroom
+    input: rtsp://localhost:8554/micam_bedroom
+  - name: kitchen
+    input: rtsp://localhost:8554/micam_kitchen
+  - name: gate
+    input: rtsp://localhost:8554/micam_gate
