@@ -149,7 +149,7 @@ streams:
 ## 5. 文件结构
 
 ```
-orange-pi-rknn/
+rknn-yolo-person-detector/
 ├── detect.py                    # 图片单张检测（独立工具）
 ├── convert_rknn.py              # ONNX → RKNN 模型转换
 ├── yolo11n.rknn                 # 模型文件（挂载入容器）
@@ -217,7 +217,7 @@ streams:
 ### 开发/测试直接运行
 
 ```bash
-cd /home/orangepi/orange-pi-rknn
+cd /mnt/shared/docker-container/rknn-yolo-person-detector
 source .venv/bin/activate
 CONFIG_PATH=config.yaml python3 -m stream_detector
 ```
@@ -226,7 +226,7 @@ CONFIG_PATH=config.yaml python3 -m stream_detector
 
 ```bash
 docker compose up --build -d
-docker logs -f orange-pi-rknn-yolo-detector-1
+docker logs -f rknn-yolo-person-detector-yolo-detector-1
 ```
 
 rknnlite 与 librknnrt 通过 volume 从宿主机挂载，无需在容器内安装。
@@ -239,7 +239,7 @@ rknnlite 与 librknnrt 通过 volume 从宿主机挂载，无需在容器内安�
 |------|------|------|
 | HTTP MJPEG 输出 | ✅ 选用 | 纯 Python，无额外依赖，go2rtc 原生支持拉取 |
 | go2rtc RTSP push | ❌ 不可用 | 需预声明 stream，无法动态推流 |
-| RKNNLite 推理 | ✅ 可用 | 挂载自 `~/.local/lib/python3.10/site-packages/rknnlite` |
+| RKNNLite 推理 | ✅ 可用 | 挂载自 `~/.local/lib/python3.12/site-packages/rknnlite` |
 | 网格单次推理 | ❌ 放弃 | 各路分辨率被稀释，检测效果差 |
 | 各路独立推理 | ✅ 选用 | 每路 640×640 完整精度，3 次 NPU 调用/帧 |
 
@@ -262,8 +262,8 @@ rknnlite 与 librknnrt 通过 volume 从宿主机挂载，无需在容器内安�
 |------|------|
 | go2rtc 输出方式 | HTTP MJPEG，go2rtc 主动拉取 `/grid` |
 | go2rtc 流名 | `cam_dashboard` |
-| RKNN 模型路径 | `/home/orangepi/orange-pi-rknn/yolo11n.rknn` |
-| rknnlite 安装位置 | `~/.local/lib/python3.10/site-packages/rknnlite` |
+| RKNN 模型路径 | `/mnt/shared/docker-container/rknn-yolo-person-detector/yolo11n.rknn` |
+| rknnlite 安装位置 | `~/.local/lib/python3.12/site-packages/rknnlite` |
 | 摄像头实际分辨率 | 848×480（SD 子码流） |
 | 推理策略 | 各路独立 640×640 推理，标注后合成 grid 输出 |
 | 帧同步策略 | 各路取最新帧，不等待 |

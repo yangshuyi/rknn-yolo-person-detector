@@ -5,6 +5,7 @@ import sys
 import time
 
 import cv2
+import numpy as np
 
 from .config import load_config
 from .detector import Detector
@@ -22,6 +23,23 @@ logger = logging.getLogger(__name__)
 def _osd(frame, text: str):
     cv2.putText(frame, text, (8, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 3)
     cv2.putText(frame, text, (8, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+
+def _no_signal_frame(shape):
+    h, w = shape[:2]
+    frame = np.full((h, w, 3), 40, dtype=np.uint8)
+    text = 'NO SIGNAL'
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)
+    cv2.putText(frame, text, ((w - tw) // 2, (h + th) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 2)
+    return frame
+
+
+def _placeholder_shape(last_frames, default=(480, 848, 3)):
+    for f in last_frames:
+        if f is not None:
+            return f.shape
+    return default
 
 
 def run():
@@ -79,11 +97,12 @@ def run():
                 last_frames[i] = f
             frames.append(last_frames[i])
 
-        if any(f is None for f in frames):
-            time.sleep(0.1)
-            continue
+        # Streams that never delivered a frame get a "no signal" placeholder instead
+        # of blocking the whole pipeline (e.g. a camera that's offline shouldn't stop
+        # detection on the streams that are working).
+        live_indices = [i for i, f in enumerate(frames) if f is not None]
 
-        results = detector.detect_frames(frames)
+        results = detector.detect_frames([frames[i] for i in live_indices]) if live_indices else []
 
         elapsed = time.monotonic() - t0
         fps_samples.append(elapsed)
@@ -91,11 +110,16 @@ def run():
             fps_samples.pop(0)
         fps = 1.0 / (sum(fps_samples) / len(fps_samples))
 
-        annotated_frames = []
+        annotated_frames = [None] * len(frames)
+        for i, (annotated, _) in zip(live_indices, results):
+            annotated_frames[i] = annotated
+        placeholder = _no_signal_frame(_placeholder_shape(frames))
+        for i, f in enumerate(annotated_frames):
+            if f is None:
+                annotated_frames[i] = placeholder
+
         total_dets = sum(len(dets) for _, dets in results)
         label = '/'.join(cfg.model.target_classes)
-        for annotated, _ in results:
-            annotated_frames.append(annotated)
 
         grid_frame, _ = compose(annotated_frames)
         _osd(grid_frame, f'FPS:{fps:.1f}  {label}:{total_dets}')

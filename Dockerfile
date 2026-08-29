@@ -1,4 +1,4 @@
-FROM arm64v8/ubuntu:22.04
+FROM arm64v8/ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     opencv-python-headless \
     pyyaml \
     numpy \

@@ -7,7 +7,7 @@ services:
       - ./config.yaml:/app/config.yaml
       - ./yolo11n.rknn:/app/models/yolo11n.rknn:ro
       # rknnlite Python 包（平台专用，从宿主机挂载）
-      - /home/orangepi/.local/lib/python3.10/site-packages/rknnlite:/usr/local/lib/python3.10/dist-packages/rknnlite:ro
+      - /home/orangepi/.local/lib/python3.12/site-packages/rknnlite:/usr/local/lib/python3.12/dist-packages/rknnlite:ro
       # RKNN 推理运行时库
       - /usr/lib/librknnrt.so:/usr/lib/librknnrt.so:ro
       # RK3588 平台标识文件（/proc 无法直接映射，由 entrypoint 通过 mount bind 注入）
