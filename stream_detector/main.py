@@ -47,7 +47,11 @@ def run():
     cfg = load_config(config_path)
 
     logger.info('Streams: %s', [s.name for s in cfg.streams])
-    logger.info('Target classes: %s', cfg.model.target_classes)
+    detect_enabled = cfg.detection.enabled
+    if detect_enabled:
+        logger.info('Target classes: %s', cfg.model.target_classes)
+    else:
+        logger.info('Detection disabled: grid only')
     logger.info('Process FPS: %d', cfg.processing.process_fps)
 
     readers = [ReaderThread(s.input, cfg.processing.max_delay_ms) for s in cfg.streams]
@@ -68,8 +72,10 @@ def run():
         else:
             logger.error('Timed out waiting for stream: %s', r.url)
 
-    detector = Detector(cfg.model)
-    logger.info('RKNN model loaded: %s', cfg.model.path)
+    detector = None
+    if detect_enabled:
+        detector = Detector(cfg.model)
+        logger.info('RKNN model loaded: %s', cfg.model.path)
 
     frame_interval = 1.0 / cfg.processing.process_fps
     last_frames = [None] * len(cfg.streams)
@@ -79,7 +85,8 @@ def run():
         logger.info('Shutting down...')
         for r in readers:
             r.stop()
-        detector.release()
+        if detector:
+            detector.release()
         mjpeg.stop()
         sys.exit(0)
 
@@ -102,7 +109,12 @@ def run():
         # detection on the streams that are working).
         live_indices = [i for i, f in enumerate(frames) if f is not None]
 
-        results = detector.detect_frames([frames[i] for i in live_indices]) if live_indices else []
+        if not live_indices:
+            results = []
+        elif detect_enabled:
+            results = detector.detect_frames([frames[i] for i in live_indices])
+        else:
+            results = [(frames[i], []) for i in live_indices]
 
         elapsed = time.monotonic() - t0
         fps_samples.append(elapsed)
@@ -122,7 +134,10 @@ def run():
         label = '/'.join(cfg.model.target_classes)
 
         grid_frame, _ = compose(annotated_frames)
-        _osd(grid_frame, f'FPS:{fps:.1f}  {label}:{total_dets}')
+        if detect_enabled:
+            _osd(grid_frame, f'FPS:{fps:.1f}  {label}:{total_dets}')
+        else:
+            _osd(grid_frame, f'FPS:{fps:.1f}')
         mjpeg.push('grid', grid_frame)
 
         to_sleep = frame_interval - (time.monotonic() - t0)

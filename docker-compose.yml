@@ -19,7 +19,7 @@ services:
       - /dev/mpp_service:/dev/mpp_service
       - /dev/dri/renderD128:/dev/dri/renderD128
       - /dev/dri/renderD129:/dev/dri/renderD129
-    restart: unless-stopped
+    restart: "no"   # 不自动启动，需要时手动 docker compose up -d
     logging:
       driver: json-file
       options:

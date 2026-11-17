@@ -217,7 +217,7 @@ streams:
 ### 开发/测试直接运行
 
 ```bash
-cd /mnt/shared/docker-container/rknn-yolo-person-detector
+cd /mnt/tfcard/docker-container/rknn-yolo-person-detector
 source .venv/bin/activate
 CONFIG_PATH=config.yaml python3 -m stream_detector
 ```
@@ -262,7 +262,7 @@ rknnlite 与 librknnrt 通过 volume 从宿主机挂载，无需在容器内安�
 |------|------|
 | go2rtc 输出方式 | HTTP MJPEG，go2rtc 主动拉取 `/grid` |
 | go2rtc 流名 | `cam_dashboard` |
-| RKNN 模型路径 | `/mnt/shared/docker-container/rknn-yolo-person-detector/yolo11n.rknn` |
+| RKNN 模型路径 | `/mnt/tfcard/docker-container/rknn-yolo-person-detector/yolo11n.rknn` |
 | rknnlite 安装位置 | `~/.local/lib/python3.12/site-packages/rknnlite` |
 | 摄像头实际分辨率 | 848×480（SD 子码流） |
 | 推理策略 | 各路独立 640×640 推理，标注后合成 grid 输出 |

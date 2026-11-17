@@ -13,6 +13,12 @@ class ModelConfig:
 
 
 @dataclass
+class DetectionConfig:
+    # False: 不加载模型、不做推理，只拼接原始画面输出宫格
+    enabled: bool = True
+
+
+@dataclass
 class ProcessingConfig:
     process_fps: int = 10
     max_delay_ms: int = 1000
@@ -33,6 +39,7 @@ class StreamConfig:
 @dataclass
 class Config:
     model: ModelConfig
+    detection: DetectionConfig
     processing: ProcessingConfig
     output: OutputConfig
     streams: List[StreamConfig]
@@ -43,6 +50,7 @@ def load_config(path: str) -> Config:
         d = yaml.safe_load(f)
     return Config(
         model=ModelConfig(**d.get('model', {})),
+        detection=DetectionConfig(**d.get('detection', {})),
         processing=ProcessingConfig(**d.get('processing', {})),
         output=OutputConfig(**d.get('output', {})),
         streams=[StreamConfig(**s) for s in d['streams']],
