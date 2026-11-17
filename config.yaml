@@ -7,7 +7,7 @@ model:
     - person
 
 detection:
-  enabled: true   # false = 只出宫格，不加载模型、不做人像检测
+  enabled: false  # false = 只出宫格，不加载模型、不做人像检测
 
 processing:
   process_fps: 10

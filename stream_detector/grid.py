@@ -7,10 +7,13 @@ import numpy as np
 CellInfo = Tuple[int, int, int, int, int]
 
 
-def compose(frames: List[np.ndarray]) -> Tuple[np.ndarray, List[CellInfo]]:
-    """Arrange frames into a 2-column grid at original resolution."""
+def compose(frames: List[np.ndarray], max_cols: int = 2) -> Tuple[np.ndarray, List[CellInfo]]:
+    """Arrange frames into a grid (max_cols columns) at original resolution.
+
+    max_cols=1 gives a single vertical column, one camera per row.
+    """
     n = len(frames)
-    cols = min(n, 2)
+    cols = min(n, max_cols)
     rows = math.ceil(n / cols)
     h, w = frames[0].shape[:2]
 

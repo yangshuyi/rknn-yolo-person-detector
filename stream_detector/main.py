@@ -42,9 +42,23 @@ def _placeholder_shape(last_frames, default=(480, 848, 3)):
     return default
 
 
+# 可用布局 → 最大列数（环境变量 LAYOUTS，逗号分隔，默认 grid）
+LAYOUT_COLS = {'grid': 2, 'flex-column': 1}
+
+
+def _parse_layouts():
+    raw = os.environ.get('LAYOUTS', 'grid')
+    names = [n.strip() for n in raw.split(',') if n.strip()]
+    unknown = [n for n in names if n not in LAYOUT_COLS]
+    if unknown or not names:
+        raise SystemExit(f'Invalid LAYOUTS={raw!r}; valid: {", ".join(LAYOUT_COLS)}')
+    return names
+
+
 def run():
     config_path = os.environ.get('CONFIG_PATH', 'config.yaml')
     cfg = load_config(config_path)
+    layouts = _parse_layouts()
 
     logger.info('Streams: %s', [s.name for s in cfg.streams])
     detect_enabled = cfg.detection.enabled
@@ -58,10 +72,10 @@ def run():
     for r in readers:
         r.start()
 
-    mjpeg = MJPEGServer(cfg.output.mjpeg_port, ['grid'], cfg.output.jpeg_quality)
+    mjpeg = MJPEGServer(cfg.output.mjpeg_port, layouts, cfg.output.jpeg_quality)
     mjpeg.start()
-    logger.info('MJPEG server listening on port %d  →  http://localhost:%d/grid',
-                cfg.output.mjpeg_port, cfg.output.mjpeg_port)
+    logger.info('MJPEG server listening on port %d  →  %s',
+                cfg.output.mjpeg_port, ', '.join('/' + n for n in layouts))
 
     logger.info('Waiting for first frames...')
     for r in readers:
@@ -133,12 +147,11 @@ def run():
         total_dets = sum(len(dets) for _, dets in results)
         label = '/'.join(cfg.model.target_classes)
 
-        grid_frame, _ = compose(annotated_frames)
-        if detect_enabled:
-            _osd(grid_frame, f'FPS:{fps:.1f}  {label}:{total_dets}')
-        else:
-            _osd(grid_frame, f'FPS:{fps:.1f}')
-        mjpeg.push('grid', grid_frame)
+        osd_text = f'FPS:{fps:.1f}  {label}:{total_dets}' if detect_enabled else f'FPS:{fps:.1f}'
+        for name in layouts:
+            layout_frame, _ = compose(annotated_frames, LAYOUT_COLS[name])
+            _osd(layout_frame, osd_text)
+            mjpeg.push(name, layout_frame)
 
         to_sleep = frame_interval - (time.monotonic() - t0)
         if to_sleep > 0:

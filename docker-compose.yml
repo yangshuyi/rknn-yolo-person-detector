@@ -2,6 +2,9 @@ services:
   yolo-detector:
     build: .
     network_mode: host
+    environment:
+      # 输出布局，逗号分隔：grid（2列宫格）、flex-column（单列垂直）
+      - LAYOUTS=flex-column
     privileged: true   # rknnlite 需要访问 NPU 设备及 /proc/device-tree（mount bind 注入）
     volumes:
       - ./config.yaml:/app/config.yaml
