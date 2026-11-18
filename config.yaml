@@ -10,12 +10,12 @@ detection:
   enabled: false  # false = 只出宫格，不加载模型、不做人像检测
 
 processing:
-  process_fps: 10
+  process_fps: 5
   max_delay_ms: 1000
 
 output:
   mjpeg_port: 8090
-  jpeg_quality: 85
+  jpeg_quality: 70
 
 streams:
   - name: bedroom

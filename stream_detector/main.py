@@ -42,6 +42,9 @@ def _placeholder_shape(last_frames, default=(480, 848, 3)):
     return default
 
 
+MAX_FPS = 30  # 输出帧率上限
+
+
 # 可用布局 → 最大列数（环境变量 LAYOUTS，逗号分隔，默认 grid）
 LAYOUT_COLS = {'grid': 2, 'flex-column': 1}
 
@@ -66,7 +69,10 @@ def run():
         logger.info('Target classes: %s', cfg.model.target_classes)
     else:
         logger.info('Detection disabled: grid only')
-    logger.info('Process FPS: %d', cfg.processing.process_fps)
+    process_fps = max(1, min(cfg.processing.process_fps, MAX_FPS))
+    if process_fps != cfg.processing.process_fps:
+        logger.warning('process_fps=%s clamped to %d (max %d)', cfg.processing.process_fps, process_fps, MAX_FPS)
+    logger.info('Process FPS: %d', process_fps)
 
     readers = [ReaderThread(s.input, cfg.processing.max_delay_ms) for s in cfg.streams]
     for r in readers:
@@ -91,9 +97,10 @@ def run():
         detector = Detector(cfg.model)
         logger.info('RKNN model loaded: %s', cfg.model.path)
 
-    frame_interval = 1.0 / cfg.processing.process_fps
+    frame_interval = 1.0 / process_fps
     last_frames = [None] * len(cfg.streams)
     fps_samples: list = []
+    prev_t0 = None
 
     def _shutdown(sig, _frame):
         logger.info('Shutting down...')
@@ -130,11 +137,13 @@ def run():
         else:
             results = [(frames[i], []) for i in live_indices]
 
-        elapsed = time.monotonic() - t0
-        fps_samples.append(elapsed)
-        if len(fps_samples) > 20:
-            fps_samples.pop(0)
-        fps = 1.0 / (sum(fps_samples) / len(fps_samples))
+        # 真实输出帧率：相邻两次循环起点的间隔（含限速等待）
+        if prev_t0 is not None:
+            fps_samples.append(t0 - prev_t0)
+            if len(fps_samples) > 20:
+                fps_samples.pop(0)
+        prev_t0 = t0
+        fps = len(fps_samples) / sum(fps_samples) if fps_samples else 0.0
 
         annotated_frames = [None] * len(frames)
         for i, (annotated, _) in zip(live_indices, results):
